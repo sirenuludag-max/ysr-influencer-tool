@@ -1,9 +1,10 @@
+import os
 from flask import Flask, request, render_template_string
 from google import genai
 
 app = Flask(__name__)
 
-client = genai.Client()
+client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
