@@ -224,7 +224,7 @@ def home():
         handle = request.form.get("handle")
 
         # Step A. Ask Gemini to infer tribe base attributes
-        tribe_raw = client.models.generate_content(
+        tribe_raw = client.generate_content(
             model="gemini-1.5-flash",
             contents=TRIBE_EXTRACTION_PROMPT.format(handle=handle)
         ).text
@@ -254,7 +254,7 @@ def home():
         )
 
         try:
-            response = client.models.generate_content(
+            response = client.generate_content(
                 model="gemini-1.5-flash",
                 contents=full_prompt
             )
