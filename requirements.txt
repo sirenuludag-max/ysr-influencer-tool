@@ -1,4 +1,4 @@
 flask
-google-genai
+google-genai>=1.2.0
 requests
 gunicorn
