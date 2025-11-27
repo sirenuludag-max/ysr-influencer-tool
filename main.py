@@ -9,12 +9,14 @@ app = Flask(__name__)
 # Gemini client
 client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
 
-####################################################
+
+###############################################################
 # 1. Upfluence Authentication
-####################################################
+###############################################################
 
 def get_upfluence_token():
     url = "https://identity.upfluence.co/oauth/token"
+
     payload = {
         "grant_type": "password",
         "username": os.environ.get("UPFLUENCE_USERNAME"),
@@ -31,9 +33,9 @@ def get_upfluence_token():
     return response.json().get("access_token")
 
 
-####################################################
+###############################################################
 # 2. Build Upfluence Query
-####################################################
+###############################################################
 
 def build_upfluence_payload(tribe_data):
     criterias = []
@@ -81,9 +83,9 @@ def build_upfluence_payload(tribe_data):
     }
 
 
-####################################################
+###############################################################
 # 3. Upfluence Search
-####################################################
+###############################################################
 
 def search_upfluence_for_tribe(tribe_data):
     token = get_upfluence_token()
@@ -119,25 +121,25 @@ def search_upfluence_for_tribe(tribe_data):
     return output
 
 
-####################################################
-# 4. Tribe Extraction Prompt
-####################################################
+###############################################################
+# 4. Tribe Extraction Prompt (ESCAPED BRACES)
+###############################################################
 
 TRIBE_PROMPT = """
 Extract a tribe profile for Instagram handle: {handle}
 
 Output ONLY JSON like this:
-{
+{{
   "niche": "fashion",
   "location": "London",
   "tier": "micro"
-}
+}}
 """
 
 
-####################################################
-# 5. Tier to follower range
-####################################################
+###############################################################
+# 5. Tier to Follower Range
+###############################################################
 
 def tier_to_range(tier):
     tier = tier.lower()
@@ -150,9 +152,9 @@ def tier_to_range(tier):
     return 1000, 2000000
 
 
-####################################################
-# 6. HTML template
-####################################################
+###############################################################
+# 6. HTML Interface
+###############################################################
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -160,20 +162,23 @@ HTML_TEMPLATE = """
 <head><title>YSR Influencer Tool</title></head>
 <body>
 <h2>Influencer Tribe Builder</h2>
+
 <form method="post">
 <input type="text" name="handle" placeholder="Instagram handle" required>
 <button type="submit">Analyse</button>
 </form>
+
 <hr>
 <pre>{{ result }}</pre>
+
 </body>
 </html>
 """
 
 
-####################################################
-# 7. Main route
-####################################################
+###############################################################
+# 7. MAIN ROUTE
+###############################################################
 
 @app.route("/", methods=["GET", "POST"])
 def home():
@@ -182,7 +187,7 @@ def home():
     if request.method == "POST":
         handle = request.form.get("handle")
 
-        # A. Tribe extraction
+        # A. TRIBE EXTRACTION
         raw = client.models.generate_content(
             model="gemini-1.5-flash",
             contents=TRIBE_PROMPT.format(handle=handle)
@@ -195,14 +200,15 @@ def home():
         except:
             tribe = {"niche": "lifestyle", "location": "", "tier": "micro"}
 
+        # follower ranges
         fmin, fmax = tier_to_range(tribe.get("tier", "micro"))
         tribe["follower_min"] = fmin
         tribe["follower_max"] = fmax
 
-        # B. Upfluence search
+        # B. UPFLUENCE SEARCH
         creators = search_upfluence_for_tribe(tribe)
 
-        # C. Final analysis
+        # C. FINAL ANALYSIS PROMPT (NO .format() JSON ISSUES)
         final_prompt = f"""
 Analyse Instagram handle: {handle}
 
@@ -215,7 +221,7 @@ Real influencers from Upfluence:
 Give:
 1. Account insights
 2. Influencer tribes
-3. Strategy
+3. A practical influencer strategy
 """
 
         output = client.models.generate_content(
@@ -228,9 +234,9 @@ Give:
     return render_template_string(HTML_TEMPLATE, result=result)
 
 
-####################################################
-# 8. Entrypoint
-####################################################
+###############################################################
+# 8. ENTRYPOINT FOR CLOUD RUN
+###############################################################
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
